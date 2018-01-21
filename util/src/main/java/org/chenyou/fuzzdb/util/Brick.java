@@ -62,7 +62,8 @@ public class Brick {
         size -= n;
     }
 
-    public String getString() {
+    @Override
+    public String toString() {
         return new String(Bytes.toArray(data));
     }
 

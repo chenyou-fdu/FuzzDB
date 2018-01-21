@@ -49,7 +49,7 @@ public class BrickTest {
     public void GetStringTest() {
         String getTestStr = "GetStringTest";
         Brick loadedBrick = new Brick(getTestStr);
-        Assert.assertEquals(getTestStr, loadedBrick.getString());
+        Assert.assertEquals(getTestStr, loadedBrick.toString());
     }
 
     @Test
@@ -57,11 +57,11 @@ public class BrickTest {
         List<Byte> data = new ArrayList<>(Bytes.asList("RemovePrefixTest".getBytes()));
         Brick loadedBrick = new Brick(data);
         loadedBrick.removePrefix(5);
-        Assert.assertEquals("ePrefixTest", loadedBrick.getString());
+        Assert.assertEquals("ePrefixTest", loadedBrick.toString());
         loadedBrick.removePrefix(3);
-        Assert.assertEquals("efixTest", loadedBrick.getString());
+        Assert.assertEquals("efixTest", loadedBrick.toString());
         loadedBrick.removePrefix(8);
-        Assert.assertEquals("", loadedBrick.getString());
+        Assert.assertEquals("", loadedBrick.toString());
         Assert.assertTrue(loadedBrick.isEmpty());
         Boolean isEx = false;
         try {

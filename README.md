@@ -1,5 +1,5 @@
 ## FuzzDB
-Yet another Java rewrite version of LevelDB
+A KV store library, yet another Java rewrite version of LevelDB
 
 ## Goals
 * Same performance as LevelDB
