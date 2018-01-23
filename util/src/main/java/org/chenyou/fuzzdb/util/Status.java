@@ -37,9 +37,7 @@ public class Status {
         return new Status(Code.kIOError, msg, msg2);
     }
 
-
-
-    public Status() {
+    private Status() {
         this.status = null;
         this.msg = null;
     }

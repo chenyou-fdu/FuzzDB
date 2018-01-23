@@ -1,5 +1,6 @@
 package org.chenyou.fuzzdb.db.test;
 
+import org.chenyou.fuzzdb.db.LogOperator;
 import org.chenyou.fuzzdb.db.SkipList;
 import org.chenyou.fuzzdb.db.SkipList.SkipListIterator;
 import org.chenyou.fuzzdb.util.Random;
@@ -46,7 +47,6 @@ public class SkipListTest {
             skipList.insert(i);
         for(Long i = 1L; i <= N; i++)
             Assert.assertTrue(skipList.contains(i));
-
     }
 
     @Test

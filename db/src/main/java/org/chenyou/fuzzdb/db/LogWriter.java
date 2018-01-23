@@ -1,7 +1,6 @@
 package org.chenyou.fuzzdb.db;
 
-public class LogWriter implements LogOperator {
+public class LogWriter  {
     public void test() {
-        System.out.println(this.shit);
     }
 }

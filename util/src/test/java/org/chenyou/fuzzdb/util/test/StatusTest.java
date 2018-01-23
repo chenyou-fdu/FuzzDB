@@ -2,8 +2,6 @@ package org.chenyou.fuzzdb.util.test;
 import org.chenyou.fuzzdb.util.Brick;
 import org.chenyou.fuzzdb.util.Status;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.Assert;
 public class StatusTest {
 

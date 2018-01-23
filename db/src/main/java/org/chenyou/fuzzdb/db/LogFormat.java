@@ -1,6 +1,6 @@
 package org.chenyou.fuzzdb.db;
 
-public class LogOperator {
+public class LogFormat {
     public enum RecordType {
         // kZeroType is reserved for preallocated files
         kZeroType,
