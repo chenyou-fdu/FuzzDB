@@ -1,6 +1,5 @@
 package org.chenyou.fuzzdb.db.test;
 
-import org.chenyou.fuzzdb.db.LogOperator;
 import org.chenyou.fuzzdb.db.SkipList;
 import org.chenyou.fuzzdb.db.SkipList.SkipListIterator;
 import org.chenyou.fuzzdb.util.Random;
