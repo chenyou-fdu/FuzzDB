@@ -56,4 +56,30 @@ public class WritableFile {
         return writeRaw(p, copy, n);
     }
 
+    public Status close() {
+        Status result = flushBuffered();
+        try {
+            this.fd.close();
+        } catch (IOException ex) {
+            return Status.IOError(new Brick(this.fileName), null);
+        }
+        return result;
+    }
+
+    public Status syncDirIfManifest() {
+        Integer lastPos = this.fileName.lastIndexOf('/');
+        String dir;
+        Brick baseName;
+        if(lastPos == -1) {
+            dir = ".";
+            baseName = new Brick(this.fileName);
+        } else {
+            dir = this.fileName.substring(0, lastPos);
+            baseName = new Brick(this.fileName.substring(lastPos+1));
+        }
+        Status s;
+        if(baseName.startWith(new Brick("MANIFEST"))) {
+        }
+    }
+
 }
