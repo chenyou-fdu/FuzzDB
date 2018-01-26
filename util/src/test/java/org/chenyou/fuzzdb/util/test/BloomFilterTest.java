@@ -9,6 +9,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -28,34 +30,34 @@ public class BloomFilterTest {
         filter = new ArrayList<>();
     }
 
-    public void reset() {
+    private void reset() {
         keys.clear();
         filter.clear();
     }
 
-    public void add(final Brick b) {
+    private void add(final Brick b) {
         keys.add(b);
     }
 
-    public void build() {
+    private void build() {
         filter.clear();
         policy.createFilter(keys, keys.size(), filter);
         keys.clear();
     }
 
-    public Boolean match(final Brick b) {
+    private Boolean match(final Brick b) {
         if(!keys.isEmpty()) {
             build();
         }
         return policy.keyMatchWith(b, new Brick(filter));
     }
 
-    public Brick key(Integer i) {
+    private Brick key(Integer i) {
         Brick tmp = new Brick(Bytes.asList(Coding.EncodeFixed32(i)));
         return tmp;
     }
 
-    public Double falsePositiveRate() {
+    private Double falsePositiveRate() {
         Integer result = 0;
         for(Integer i = 0; i < 10000; i++) {
             if(match(key(i + 1000000000))) {
@@ -64,16 +66,18 @@ public class BloomFilterTest {
         }
         return result / 10000.0;
     }
-    static public Integer nextLen(Integer len) {
+    static private Integer nextLen(Integer len) {
         if(len < 10) len += 1;
         else if(len < 100) len += 10;
         else if(len < 1000) len += 100;
         else len += 1000;
         return len;
     }
-    public Integer filterSize() {
+
+    private Integer filterSize() {
         return filter.size();
     }
+
     @Test
     public void EmptyTest() {
         Assert.assertFalse(match(new Brick("hello")));

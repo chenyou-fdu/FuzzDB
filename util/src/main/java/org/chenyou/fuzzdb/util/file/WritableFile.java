@@ -3,6 +3,8 @@ package org.chenyou.fuzzdb.util.file;
 import org.chenyou.fuzzdb.util.Brick;
 import org.chenyou.fuzzdb.util.Status;
 
+import java.io.FileDescriptor;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -79,7 +81,16 @@ public class WritableFile {
         }
         Status s;
         if(baseName.startWith(new Brick("MANIFEST"))) {
+            try {
+                FileOutputStream tmpFd = new FileOutputStream(dir);
+                tmpFd.getChannel().force(true);
+            } catch (FileNotFoundException ex) {
+
+            } catch (IOException ex) {
+
+            }
         }
+        return null;
     }
 
 }
