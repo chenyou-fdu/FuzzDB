@@ -1,12 +1,17 @@
 package org.chenyou.fuzzdb.util.file;
 
+import com.google.common.base.Preconditions;
 import org.chenyou.fuzzdb.util.Brick;
+import org.chenyou.fuzzdb.util.Constants;
 import org.chenyou.fuzzdb.util.Status;
 
-import java.io.FileDescriptor;
 import java.io.FileNotFoundException;
+import java.nio.channels.FileChannel;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.concurrent.locks.Condition;
 
 import com.google.common.primitives.Bytes;
 
@@ -79,18 +84,44 @@ public class WritableFile {
             dir = this.fileName.substring(0, lastPos);
             baseName = new Brick(this.fileName.substring(lastPos+1));
         }
-        Status s;
         if(baseName.startWith(new Brick("MANIFEST"))) {
             try {
-                FileOutputStream tmpFd = new FileOutputStream(dir);
-                tmpFd.getChannel().force(true);
-            } catch (FileNotFoundException ex) {
-
-            } catch (IOException ex) {
-
+                // implements ref to Lucene-Core IOUtil.fsync
+                final FileChannel tmpFd = FileChannel.open(Paths.get(dir), StandardOpenOption.READ);
+                // fsync on dir
+                tmpFd.force(true);
+            }
+            catch (FileNotFoundException ex) {
+                return Status.NotFound(new Brick(dir), new Brick("directory not found"));
+            }
+            catch (IOException ex) {
+                Preconditions.checkArgument(Constants.WINDOWS,
+                        "Windows platform doesn't support fsync");
+                return Status.OK();
             }
         }
-        return null;
+        return Status.OK();
     }
 
+    public Status sync() {
+        Status s = syncDirIfManifest();
+        if(!s.ok()) {
+            return s;
+        }
+        s = flushBuffered();
+        if(s.ok()) {
+            // fdatasync on file
+            try {
+                this.fd.getChannel().force(false);
+            } catch (FileNotFoundException ex) {
+                return Status.NotFound(new Brick(this.fileName), new Brick("file not found"));
+            }
+            catch (IOException ex) {
+                Preconditions.checkArgument(Constants.WINDOWS,
+                        "Windows platform doesn't support fsync");
+                return Status.OK();
+            }
+        }
+        return s;
+    }
 }

@@ -8,7 +8,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.junit.Assert;
 
-import java.util.*;
+import java.util.TreeSet;
+import java.util.Comparator;
+import java.util.Iterator;
 
 /**
  * Created by ChenYou on 2018/1/2.
