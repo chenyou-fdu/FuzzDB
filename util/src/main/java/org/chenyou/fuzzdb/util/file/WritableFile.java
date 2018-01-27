@@ -11,7 +11,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.concurrent.locks.Condition;
 
 import com.google.common.primitives.Bytes;
 
@@ -35,6 +34,7 @@ public class WritableFile {
         }
         return Status.OK();
     }
+
     public WritableFile(String fileName, FileOutputStream fd) {
         this.fd = fd;
         this.fileName = fileName;
