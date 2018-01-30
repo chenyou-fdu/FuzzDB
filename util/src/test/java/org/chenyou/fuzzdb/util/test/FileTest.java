@@ -3,6 +3,7 @@ package org.chenyou.fuzzdb.util.test;
 import org.chenyou.fuzzdb.util.Brick;
 
 import org.chenyou.fuzzdb.util.Random;
+import org.chenyou.fuzzdb.util.file.SequentialFile;
 import org.chenyou.fuzzdb.util.file.WritableFile;
 import org.junit.After;
 import org.junit.Assert;
@@ -121,28 +122,52 @@ public class FileTest {
 
     @Test
     public void WritableFileTest3() {
-        WritableFile writableFile = null;
         Integer lineNum = 100;
-        try {
-            FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            writableFile = new WritableFile(testTmpFilePath, fd);
-            for(Integer i = 0; i < lineNum; i++) {
-                String eachText = rnd.next().toString();
+        for(Integer i = 0; i < lineNum; i++) {
+            String eachText = rnd.next().toString();
+            WritableFile writableFile = null;
+            try {
+                FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+                writableFile = new WritableFile(testTmpFilePath, fd);
                 Assert.assertTrue(writableFile.append(new Brick(eachText)).ok());
                 Assert.assertTrue(writableFile.flush().ok());
-                logger.debug("write test string {}", eachText);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex.getMessage());
+            } finally {
+                if (writableFile != null) {
+                    Assert.assertTrue(writableFile.close().ok());
+                }
+            }
+            try {
                 byte[] rawBytes = Files.readAllBytes(Paths.get(testTmpFilePath));
                 String readText = new String(rawBytes);
-                Assert.assertEquals(eachText,readText);
+                Assert.assertEquals(eachText, readText);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex.getMessage());
             }
+        }
+    }
 
+    @Test
+    public void SequentialFileTest1() {
+        String eachText = rnd.next().toString();
+        try {
+            Files.write(Paths.get(testTmpFilePath), eachText.getBytes(), StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         } catch (IOException ex) {
             throw new RuntimeException(ex.getMessage());
-        } finally {
-            if(writableFile != null) {
-                Assert.assertTrue(writableFile.close().ok());
-            }
+        }
+        SequentialFile sequentialFile = null;
+        try {
+            FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.READ);
+            sequentialFile = new SequentialFile(testTmpFilePath, fd);
+            Brick res = null;
+
+            Assert.assertTrue(sequentialFile.read(3, res).ok());
+            int i = 0;
+        } catch (IOException ex) {
+
         }
     }
 }
