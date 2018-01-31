@@ -17,23 +17,23 @@ public class Status {
         return new Status();
     }
 
-    static public Status NotFound(final Brick msg, final Brick msg2) {
+    static public Status NotFound(final Slice msg, final Slice msg2) {
         return new Status(Code.kNotFound, msg, msg2);
     }
 
-    static public Status Corruption(final Brick msg, final Brick msg2) {
+    static public Status Corruption(final Slice msg, final Slice msg2) {
         return new Status(Code.kCorruption, msg, msg2);
     }
 
-    static public Status NotSupported(final Brick msg, final Brick msg2) {
+    static public Status NotSupported(final Slice msg, final Slice msg2) {
         return new Status(Code.kNotSupported, msg, msg2);
     }
 
-    static public Status InvalidArgument(final Brick msg, final Brick msg2) {
+    static public Status InvalidArgument(final Slice msg, final Slice msg2) {
         return new Status(Code.kInvalidArgument, msg, msg2);
     }
 
-    static public Status IOError(final Brick msg, final Brick msg2) {
+    static public Status IOError(final Slice msg, final Slice msg2) {
         return new Status(Code.kIOError, msg, msg2);
     }
 
@@ -41,7 +41,7 @@ public class Status {
         this.status = null;
         this.msg = null;
     }
-    private Status(Code code, final Brick msg, final Brick msg2) {
+    private Status(Code code, final Slice msg, final Slice msg2) {
         Preconditions.checkArgument(code != Code.kOk && msg != null);
         this.status = code;
         StringBuilder sb = new StringBuilder();

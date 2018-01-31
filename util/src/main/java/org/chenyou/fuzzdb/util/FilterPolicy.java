@@ -8,7 +8,7 @@ import java.util.List;
 public interface FilterPolicy {
     String getFilterName();
 
-    void createFilter(List<Brick> keys, Integer n, List<Byte> dst);
+    void createFilter(List<Slice> keys, Integer n, List<Byte> dst);
 
-    Boolean keyMatchWith(final Brick key, final Brick filter);
+    Boolean keyMatchWith(final Slice key, final Slice filter);
 }

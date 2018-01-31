@@ -1,7 +1,7 @@
 package org.chenyou.fuzzdb.util.test;
 
 import org.chenyou.fuzzdb.util.BloomFilter;
-import org.chenyou.fuzzdb.util.Brick;
+import org.chenyou.fuzzdb.util.Slice;
 import org.chenyou.fuzzdb.util.FilterPolicy;
 import org.chenyou.fuzzdb.util.Coding;
 import com.google.common.primitives.Bytes;
@@ -9,8 +9,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -21,8 +19,9 @@ import org.slf4j.LoggerFactory;
 public class BloomFilterTest {
     private final Logger logger = LoggerFactory.getLogger(BloomFilterTest.class);
     private FilterPolicy policy;
-    private List<Brick> keys;
+    private List<Slice> keys;
     private List<Byte> filter;
+
     @Before
     public void setup() {
         policy = BloomFilter.newBloomFilterPolicy(10);
@@ -35,7 +34,7 @@ public class BloomFilterTest {
         filter.clear();
     }
 
-    private void add(final Brick b) {
+    private void add(final Slice b) {
         keys.add(b);
     }
 
@@ -45,15 +44,15 @@ public class BloomFilterTest {
         keys.clear();
     }
 
-    private Boolean match(final Brick b) {
+    private Boolean match(final Slice b) {
         if(!keys.isEmpty()) {
             build();
         }
-        return policy.keyMatchWith(b, new Brick(filter));
+        return policy.keyMatchWith(b, new Slice(Bytes.toArray(filter)));
     }
 
-    private Brick key(Integer i) {
-        Brick tmp = new Brick(Bytes.asList(Coding.EncodeFixed32(i)));
+    private Slice key(Integer i) {
+        Slice tmp = new Slice(Coding.EncodeFixed32(i));
         return tmp;
     }
 
@@ -80,20 +79,20 @@ public class BloomFilterTest {
 
     @Test
     public void EmptyTest() {
-        Assert.assertFalse(match(new Brick("hello")));
-        Assert.assertFalse(match(new Brick("world")));
+        Assert.assertFalse(match(new Slice("hello")));
+        Assert.assertFalse(match(new Slice("world")));
     }
 
     @Test
     public void SmallTest() {
-        add(new Brick("hello"));
-        add(new Brick("world"));
-        add(new Brick(Bytes.asList(Coding.EncodeFixed32(128))));
-        Assert.assertTrue(match(new Brick("hello")));
-        Assert.assertTrue(match(new Brick("world")));
-        Assert.assertTrue(match(new Brick(Bytes.asList(Coding.EncodeFixed32(128)))));
-        Assert.assertFalse(match(new Brick("xxx")));
-        Assert.assertFalse(match(new Brick("!")));
+        add(new Slice("hello"));
+        add(new Slice("world"));
+        add(new Slice(Coding.EncodeFixed32(128)));
+        Assert.assertTrue(match(new Slice("hello")));
+        Assert.assertTrue(match(new Slice("world")));
+        Assert.assertTrue(match(new Slice(Coding.EncodeFixed32(128))));
+        Assert.assertFalse(match(new Slice("xxx")));
+        Assert.assertFalse(match(new Slice("!")));
     }
 
     @Test

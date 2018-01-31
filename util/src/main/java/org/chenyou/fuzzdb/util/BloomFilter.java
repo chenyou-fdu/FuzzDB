@@ -1,7 +1,6 @@
 package org.chenyou.fuzzdb.util;
 
 import com.google.common.primitives.Bytes;
-
 import java.util.List;
 
 /**
@@ -27,7 +26,7 @@ public class BloomFilter implements FilterPolicy {
     }
 
     @Override
-    public void createFilter(List<Brick> keys, Integer n, List<Byte> dst) {
+    public void createFilter(List<Slice> keys, Integer n, List<Byte> dst) {
         Integer bits = n * bitsPerKey;
 
         // min bloom filter size to reduce false positive rate
@@ -73,12 +72,13 @@ public class BloomFilter implements FilterPolicy {
     }
 
     @Override
-    public Boolean keyMatchWith(final Brick key, final Brick filter) {
+    public Boolean keyMatchWith(final Slice key, final Slice filter) {
         Integer len = filter.getSize();
         if(len < 2) return false;
-        List<Byte> array = filter.getData();
+        //List<Byte> array = filter.getData();
+        byte[] array = filter.getData();
         Integer bits = (len - 1) * 8;
-        Integer k = (int)(byte)array.get(len-1);
+        Integer k = (int)array[len-1];
         if(k > 30) return true;
         Integer h = bloomHash(key);
         Integer delta = (h >>> 17) | (h << 15);
@@ -86,15 +86,15 @@ public class BloomFilter implements FilterPolicy {
             Integer bitpos = Integer.remainderUnsigned(h, bits);
             Integer bitposDiv8 = Integer.divideUnsigned(bitpos, 8);
             Integer bitposMod8 = Integer.remainderUnsigned(bitpos, 8);
-            if((array.get(bitposDiv8) & (1 << bitposMod8)) == 0) return false;
+            if((array[bitposDiv8] & (1 << bitposMod8)) == 0) return false;
             h += delta;
         }
         return true;
     }
 
-    static private Integer bloomHash(final Brick key) {
-        List<Byte> keyData = key.getData();
-        return Hash.hash(Bytes.toArray(keyData), key.getSize(), 0xbc9f1d34);
+    static private Integer bloomHash(final Slice key) {
+        //List<Byte> keyData = key.getData();
+        return Hash.hash(key.getData(), key.getSize(), 0xbc9f1d34);
     }
 
     static public FilterPolicy newBloomFilterPolicy(Integer bitsPerKey) {

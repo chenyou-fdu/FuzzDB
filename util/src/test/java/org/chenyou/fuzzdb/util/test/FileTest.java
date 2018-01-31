@@ -1,6 +1,6 @@
 package org.chenyou.fuzzdb.util.test;
 
-import org.chenyou.fuzzdb.util.Brick;
+import org.chenyou.fuzzdb.util.Slice;
 
 import org.chenyou.fuzzdb.util.Random;
 import org.chenyou.fuzzdb.util.file.SequentialFile;
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.lang.ref.Reference;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -23,7 +23,7 @@ import java.nio.file.StandardOpenOption;
 
 
 public class FileTest {
-    private String testTmpFilePath = "D://filetesttmp";
+    private String testTmpFilePath = "filetesttmp";
     private final Logger logger = LoggerFactory.getLogger(FileTest.class);
     private Random rnd;
 
@@ -54,7 +54,7 @@ public class FileTest {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE);
             writableFile = new WritableFile(testTmpFilePath, fd);
-            Assert.assertTrue(writableFile.append(new Brick(text)).ok());
+            Assert.assertTrue(writableFile.append(new Slice(text)).ok());
             Assert.assertTrue(writableFile.flush().ok());
             logger.debug("write {} string lager than buffer ", lineNum);
         } catch (IOException ex) {
@@ -85,21 +85,21 @@ public class FileTest {
             for(Integer i = 0; i < lineNum; i++) {
                 String eachText = rnd.next().toString();
                 sb.append(eachText);
-                Assert.assertTrue(writableFile.append(new Brick(eachText)).ok());
+                Assert.assertTrue(writableFile.append(new Slice(eachText)).ok());
             }
             Assert.assertTrue(writableFile.flush().ok());
             logger.debug("append all flush once {} number string", lineNum);
             for(Integer i = 0; i < lineNum; i++) {
                 String eachText = rnd.next().toString();
                 sb.append(eachText);
-                Assert.assertTrue(writableFile.append(new Brick(eachText)).ok());
+                Assert.assertTrue(writableFile.append(new Slice(eachText)).ok());
                 Assert.assertTrue(writableFile.flush().ok());
             }
             logger.debug("append once flush once {} string", lineNum);
             for(Integer i = 0; i < lineNum; i++) {
                 String eachText = rnd.next().toString();
                 sb.append(eachText);
-                Assert.assertTrue(writableFile.append(new Brick(eachText)).ok());
+                Assert.assertTrue(writableFile.append(new Slice(eachText)).ok());
                 Assert.assertTrue(writableFile.sync().ok());
             }
             logger.debug("append once sync once {} string", lineNum);
@@ -130,7 +130,7 @@ public class FileTest {
                 FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
                         StandardOpenOption.WRITE, StandardOpenOption.CREATE);
                 writableFile = new WritableFile(testTmpFilePath, fd);
-                Assert.assertTrue(writableFile.append(new Brick(eachText)).ok());
+                Assert.assertTrue(writableFile.append(new Slice(eachText)).ok());
                 Assert.assertTrue(writableFile.flush().ok());
             } catch (IOException ex) {
                 throw new RuntimeException(ex.getMessage());
@@ -151,9 +151,15 @@ public class FileTest {
 
     @Test
     public void SequentialFileTest1() {
-        String eachText = rnd.next().toString();
+        Integer lineNum = 50000;
+        StringBuilder sb = new StringBuilder();
+        for(Integer i = 0; i < lineNum; i++) {
+            String eachText = rnd.next().toString();
+            sb.append(eachText);
+        }
+        String text = sb.toString();
         try {
-            Files.write(Paths.get(testTmpFilePath), eachText.getBytes(), StandardOpenOption.TRUNCATE_EXISTING,
+            Files.write(Paths.get(testTmpFilePath), text.getBytes(), StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE);
         } catch (IOException ex) {
             throw new RuntimeException(ex.getMessage());
@@ -162,12 +168,50 @@ public class FileTest {
         try {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.READ);
             sequentialFile = new SequentialFile(testTmpFilePath, fd);
-            Brick res = null;
-
-            Assert.assertTrue(sequentialFile.read(3, res).ok());
-            int i = 0;
+            Slice res = new Slice();
+            Assert.assertTrue(sequentialFile.read(text.length(), res).ok());
+            Assert.assertEquals(text, new String(res.getData()));
         } catch (IOException ex) {
+            throw new RuntimeException(ex.getMessage());
+        } finally {
+            if(sequentialFile != null) {
+                Assert.assertTrue(sequentialFile.close().ok());
+            }
+        }
+    }
 
+    @Test
+    public void SequentialFileTest2() {
+        Integer lineNum = 512301;
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+        for(Integer i = 0; i < lineNum; i++) {
+            String eachText = rnd.next().toString();
+            if(i > lineNum/2) sb1.append(eachText);
+            sb2.append(eachText);
+        }
+        String text1 = sb1.toString();
+        String text2 = sb2.toString();
+        try {
+            Files.write(Paths.get(testTmpFilePath), text2.getBytes(), StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+        } catch (IOException ex) {
+            throw new RuntimeException(ex.getMessage());
+        }
+        SequentialFile sequentialFile = null;
+        try {
+            FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.READ);
+            sequentialFile = new SequentialFile(testTmpFilePath, fd);
+            Slice res = new Slice();
+            Assert.assertTrue(sequentialFile.skip((long)(text2.length()-text1.length())).ok());
+            Assert.assertTrue(sequentialFile.read(text1.length(), res).ok());
+            Assert.assertEquals(text1, new String(res.getData()));
+        } catch (IOException ex) {
+            throw new RuntimeException(ex.getMessage());
+        } finally {
+            if(sequentialFile != null) {
+                Assert.assertTrue(sequentialFile.close().ok());
+            }
         }
     }
 }

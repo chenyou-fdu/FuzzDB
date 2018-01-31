@@ -1,7 +1,7 @@
 package org.chenyou.fuzzdb.util.file;
 
 import com.google.common.base.Preconditions;
-import org.chenyou.fuzzdb.util.Brick;
+import org.chenyou.fuzzdb.util.Slice;
 import org.chenyou.fuzzdb.util.Constants;
 import org.chenyou.fuzzdb.util.Status;
 
@@ -34,7 +34,7 @@ public class WritableFile {
             try {
                 this.fd.write(b);
             } catch (IOException ex) {
-                return Status.IOError(new Brick(this.fileName), null);
+                return Status.IOError(new Slice(this.fileName), null);
             }
         }
         return Status.OK();
@@ -47,9 +47,9 @@ public class WritableFile {
         this.pos = 0;
     }
 
-    public Status append(final Brick data) {
+    public Status append(final Slice data) {
         Integer n = data.getSize();
-        byte[] p = Bytes.toArray(data.getData());
+        byte[] p = data.getData();
         int copy = Math.min(n, kBufSize - pos);
         this.buf.put(p, 0, copy);
         n -= copy;
@@ -76,7 +76,7 @@ public class WritableFile {
         try {
             this.fd.close();
         } catch (IOException ex) {
-            return Status.IOError(new Brick(this.fileName), null);
+            return Status.IOError(new Slice(this.fileName), null);
         }
         return result;
     }
@@ -88,15 +88,15 @@ public class WritableFile {
     public Status syncDirIfManifest() {
         Integer lastPos = this.fileName.lastIndexOf('/');
         String dir;
-        Brick baseName;
+        Slice baseName;
         if(lastPos == -1) {
             dir = ".";
-            baseName = new Brick(this.fileName);
+            baseName = new Slice(this.fileName);
         } else {
             dir = this.fileName.substring(0, lastPos);
-            baseName = new Brick(this.fileName.substring(lastPos+1));
+            baseName = new Slice(this.fileName.substring(lastPos+1));
         }
-        if(baseName.startWith(new Brick("MANIFEST"))) {
+        if(baseName.startWith(new Slice("MANIFEST"))) {
             try {
                 // implements ref to Lucene-Core IOUtil.fsync
                 final FileChannel tmpFd = FileChannel.open(Paths.get(dir), StandardOpenOption.READ);
@@ -104,7 +104,7 @@ public class WritableFile {
                 tmpFd.force(true);
             }
             catch (FileNotFoundException ex) {
-                return Status.NotFound(new Brick(dir), new Brick("directory not found"));
+                return Status.NotFound(new Slice(dir), new Slice("directory not found"));
             }
             catch (IOException ex) {
                 Preconditions.checkArgument(Constants.WINDOWS,
@@ -126,7 +126,7 @@ public class WritableFile {
             try {
                 this.fd.force(false);
             } catch (FileNotFoundException ex) {
-                return Status.NotFound(new Brick(this.fileName), new Brick("file not found"));
+                return Status.NotFound(new Slice(this.fileName), new Slice("file not found"));
             }
             catch (IOException ex) {
                 Preconditions.checkArgument(Constants.WINDOWS,
