@@ -1,6 +1,5 @@
 package org.chenyou.fuzzdb.util;
 
-import com.google.common.primitives.Bytes;
 import java.util.List;
 
 /**
