@@ -12,8 +12,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 
-import com.google.common.primitives.Bytes;
-
 public class WritableFile {
     private String fileName;
     private FileChannel fd;

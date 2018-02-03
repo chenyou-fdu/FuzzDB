@@ -1,11 +1,14 @@
 package org.chenyou.fuzzdb.util;
+
 import java.nio.ByteOrder;
+
+import com.google.common.base.Preconditions;
 import sun.misc.Unsafe;
 
-import java.util.zip.Checksum;
-
-public class FuzzCRC32C implements Checksum {
-
+// almost based on JDK9/JDK10 CRC32C implements
+//   but with different interface
+public class FuzzCRC32C{
+    private int crc = 0xFFFFFFFF;
     private static final int CRC32C_POLY = 0x1EDC6F41;
     private static final int REVERSED_CRC32C_POLY = Integer.reverse(CRC32C_POLY);
 
@@ -62,67 +65,36 @@ public class FuzzCRC32C implements Checksum {
         }
     }
 
-    /**
-     * Calculated CRC-32C value
-     */
-    private int crc = 0xFFFFFFFF;
+    private static final Integer kMaskDelta = 0xa282ead8;
 
-    /**
-     * Creates a new CRC32C object.
-     */
-    public FuzzCRC32C() {
+    // return a masked representation of crc.
+    //  Motivation: it is problematic to compute the CRC of a string that
+    //  contains embedded CRCs.  Therefore we recommend that CRCs stored
+    //  somewhere (e.g., in files) should be masked before being stored.
+    public static Integer Mask(Integer crc) {
+        // Rotate right by 15 bits and add a constant.
+        return ((crc >>> 15) | (crc << 17)) + kMaskDelta;
     }
 
-    /**
-     * Updates the CRC-32C checksum with the specified byte (the low eight bits
-     * of the argument b).
-     */
-    @Override
-    public void update(int b) {
-        crc = (crc >>> 8) ^ byteTable[(crc ^ (b & 0xFF)) & 0xFF];
+    // Return the crc whose masked representation is maskedCrc.
+    public static Integer Unmask(Integer maskedCrc) {
+        Integer rot = maskedCrc - kMaskDelta;
+        return ((rot >>> 17) | (rot << 15));
     }
 
-    /**
-     * Updates the CRC-32C checksum with the specified array of bytes.
-     *
-     * @throws ArrayIndexOutOfBoundsException
-     *         if {@code off} is negative, or {@code len} is negative, or
-     *         {@code off+len} is negative or greater than the length of
-     *         the array {@code b}.
-     */
-    @Override
-    public void update(byte[] b, int off, int len) {
-        if (b == null) {
-            throw new NullPointerException();
-        }
-        if (off < 0 || len < 0 || off > b.length - len) {
-            throw new ArrayIndexOutOfBoundsException();
-        }
-        crc = updateBytes(crc, b, off, (off + len));
+    public static int value(final byte[] data, int n) {
+        Preconditions.checkNotNull(data);
+        int preRes = extend(0xFFFFFFFF, data, 0, n);
+        return (int)((~preRes) & 0xFFFFFFFFL);
     }
 
-
-    /**
-     * Resets CRC-32C to initial value.
-     */
-    @Override
-    public void reset() {
-        crc = 0xFFFFFFFF;
+    public static int extend(int crcValue, final byte[] data, int n) {
+        int preCrc = (int)((~crcValue) & 0xFFFFFFFFL);
+        int preRes = extend(preCrc, data, 0, n);
+        return (int)((~preRes) & 0xFFFFFFFFL);
     }
 
-    /**
-     * Returns CRC-32C value.
-     */
-    @Override
-    public long getValue() {
-        return (~crc) & 0xFFFFFFFFL;
-    }
-
-    /**
-     * Updates the CRC-32C checksum with the specified array of bytes.
-     */
-    //@HotSpotIntrinsicCandidate
-    private static int updateBytes(int crc, byte[] b, int off, int end) {
+    private static int extend(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
         // or if bytes are stored with a larger witdh than one byte.,%
@@ -193,66 +165,4 @@ public class FuzzCRC32C implements Checksum {
         return crc;
     }
 
-    /**
-     * Updates the CRC-32C checksum reading from the specified address.
-     */
-    ///@HotSpotIntrinsicCandidate
-    private static int updateDirectByteBuffer(int crc, long address,
-                                              int off, int end) {
-
-        // Do only byte reads for arrays so short they can't be aligned
-        if (end - off >= 8) {
-
-            // align on 8 bytes
-            int alignLength = (8 - (int) ((address + off) & 0x7)) & 0x7;
-            for (int alignEnd = off + alignLength; off < alignEnd; off++) {
-                crc = (crc >>> 8)
-                        ^ byteTable[(crc ^ UNSAFE.getByte(address + off)) & 0xFF];
-            }
-
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = Integer.reverseBytes(crc);
-            }
-
-            // slicing-by-8
-            for (; off <= (end - Long.BYTES); off += Long.BYTES) {
-                // Always reading two ints as reading a long followed by
-                // shifting and casting was slower.
-                int firstHalf = UNSAFE.getInt(address + off);
-                int secondHalf = UNSAFE.getInt(address + off + Integer.BYTES);
-                crc ^= firstHalf;
-                if (ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN) {
-                    crc = byteTable7[crc & 0xFF]
-                            ^ byteTable6[(crc >>> 8) & 0xFF]
-                            ^ byteTable5[(crc >>> 16) & 0xFF]
-                            ^ byteTable4[crc >>> 24]
-                            ^ byteTable3[secondHalf & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable0[secondHalf >>> 24];
-                } else { // ByteOrder.BIG_ENDIAN
-                    crc = byteTable0[secondHalf & 0xFF]
-                            ^ byteTable1[(secondHalf >>> 8) & 0xFF]
-                            ^ byteTable2[(secondHalf >>> 16) & 0xFF]
-                            ^ byteTable3[secondHalf >>> 24]
-                            ^ byteTable4[crc & 0xFF]
-                            ^ byteTable5[(crc >>> 8) & 0xFF]
-                            ^ byteTable6[(crc >>> 16) & 0xFF]
-                            ^ byteTable7[crc >>> 24];
-                }
-            }
-
-            if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
-                crc = Integer.reverseBytes(crc);
-            }
-        }
-
-        // Tail
-        for (; off < end; off++) {
-            crc = (crc >>> 8)
-                    ^ byteTable[(crc ^ UNSAFE.getByte(address + off)) & 0xFF];
-        }
-
-        return crc;
-    }
 }
