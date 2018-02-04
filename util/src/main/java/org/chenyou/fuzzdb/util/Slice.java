@@ -31,6 +31,15 @@ public class Slice {
         this.data = data;
         this.size = data.length;
     }
+
+    public Slice(byte[] data, Integer offset, Integer size) {
+        this.data = new byte[size];
+        for(Integer i = 0; i < size; i++) {
+            this.data[i] = data[i+offset];
+        }
+        this.size = size;
+    }
+
     public byte[] getData() {
         return this.data;
     }

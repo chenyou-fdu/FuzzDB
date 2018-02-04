@@ -49,28 +49,36 @@ public class LogWriter  {
         Status s = null;
         Boolean begin = true;
         do {
+            // leftOver means unused size in a block
+            //   since the header info can't be stored in different block
+            //   so when leftOver < kHeaderSize, we store this record to next block
             final Integer leftOver = LogFormat.kBlockSize - blockOffset;
             Preconditions.checkArgument(leftOver >= 0);
             if(leftOver < LogFormat.kHeaderSize) {
                 // if leftover size is less than header size,
                 //   switch to a new block
                 if(leftOver > 0) {
-                    // fill the trailer using zero
+                    // fill this block using zero
                     // todo may have better padding char
                     Preconditions.checkArgument(LogFormat.kHeaderSize == 7);
-                    writableFile.append(new Slice(new byte[LogFormat.kHeaderSize]));
+                    writableFile.append(new Slice(new byte[leftOver]));
                 }
                 this.blockOffset = 0;
             }
-            // we never leave < kHeaderSize bytes in a block.
+            // double check block offset
+            //   CAUTION: it's acceptable to stored full head info in the tail of a block
             Preconditions.checkArgument(LogFormat.kBlockSize - this.blockOffset >= LogFormat.kHeaderSize);
 
             Integer availableSize = LogFormat.kBlockSize - this.blockOffset - LogFormat.kHeaderSize;
+            // left means un-append part of slice data
             Integer fragmentSize = (left < availableSize) ? left : availableSize;
 
             LogFormat.RecordType type = null;
             final Boolean end = (left == fragmentSize);
-
+            // full means a full record stored in one block
+            // begin means this part is the first part of one record
+            // middle means this part is one of the middle part of one record
+            // end means this part is the last part of one record
             if(begin && end) {
                 type = LogFormat.RecordType.kFullType;
             } else if(begin) {
@@ -80,11 +88,15 @@ public class LogWriter  {
             } else {
                 type = LogFormat.RecordType.kMiddleType;
             }
-
-        } while(true);
+            Integer dataOffset = slice.getSize() - left;
+            s = emitPhysicalRecord(type, data, dataOffset, fragmentSize);
+            left -= fragmentSize;
+            begin = false;
+        } while(s.ok() && left > 0);
+        return s;
     }
 
-    public Status emitPhysicalRecord(LogFormat.RecordType t, byte[] data, Integer n) {
+    public Status emitPhysicalRecord(LogFormat.RecordType t, byte[] data, Integer offset, Integer n) {
         // must fit in two bytes
         Preconditions.checkArgument(n <= 0xffff);
         Preconditions.checkArgument(this.blockOffset + LogFormat.kHeaderSize + n <= LogFormat.kBlockSize);
@@ -97,16 +109,14 @@ public class LogWriter  {
         // compute the crc of the record type and the payload
         Integer crc = FuzzCRC32C.extend(this.typeCrc[t.getValue()], data, n);
         crc = FuzzCRC32C.Mask(crc);
-        byte[] crcArray = Coding.EncodeFixed32(crc);
         // save crc32c value to first 4 bytes of header
-        for(Integer i = 0; i < 4; i++)
-            buf[i] = crcArray[i];
+        Coding.EncodeFixed32(buf, crc);
 
         // write header
         Status s = writableFile.append(new Slice(buf));
         if(s.ok()) {
             // write payload
-            s = writableFile.append(new Slice(data));
+            s = writableFile.append(new Slice(data, offset, n));
             if(s.ok()) writableFile.flush();
         }
         this.blockOffset += LogFormat.kHeaderSize + n;

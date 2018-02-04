@@ -52,7 +52,9 @@ public class BloomFilterTest {
     }
 
     private Slice key(Integer i) {
-        Slice tmp = new Slice(Coding.EncodeFixed32(i));
+        byte[] data = new byte[4];
+        Coding.EncodeFixed32(data, i);
+        Slice tmp = new Slice(data);
         return tmp;
     }
 
@@ -87,10 +89,12 @@ public class BloomFilterTest {
     public void SmallTest() {
         add(new Slice("hello"));
         add(new Slice("world"));
-        add(new Slice(Coding.EncodeFixed32(128)));
+        byte[] data = new byte[4];
+        Coding.EncodeFixed32(data, 128);
+        add(new Slice(data));
         Assert.assertTrue(match(new Slice("hello")));
         Assert.assertTrue(match(new Slice("world")));
-        Assert.assertTrue(match(new Slice(Coding.EncodeFixed32(128))));
+        Assert.assertTrue(match(new Slice(data)));
         Assert.assertFalse(match(new Slice("xxx")));
         Assert.assertFalse(match(new Slice("!")));
     }

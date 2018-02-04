@@ -1,6 +1,6 @@
 package org.chenyou.fuzzdb.util;
 
-import org.chenyou.fuzzdb.util.file.WritableFile;
+import org.chenyou.fuzzdb.util.file.FuzzWritableFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,12 +27,12 @@ public class Helper {
     }
 
     // todo may left FileChannle unclosed, need to fix first
-    private static Status newWritableFile(final String fileName, WritableFile writableFile) {
+    private static Status newWritableFile(final String fileName, FuzzWritableFile writableFile) {
         Status s = Status.OK();
         try {
             FileChannel fc = FileChannel.open(Paths.get(fileName), StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            writableFile = new WritableFile(fileName, fc);
+            writableFile = new FuzzWritableFile(fileName, fc);
         } catch (IOException ex) {
             writableFile = null;
             return Status.IOError(new Slice(fileName), new Slice("FileChannel Open Failed"));

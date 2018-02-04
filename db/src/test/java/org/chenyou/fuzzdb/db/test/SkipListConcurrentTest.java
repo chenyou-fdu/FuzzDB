@@ -61,11 +61,11 @@ public class SkipListConcurrentTest {
         }
         private Long hashNumbers(Long k, Long g) {
             byte[] data = new byte[16];
-            byte[] num1 = Coding.EncodeFixed64(k);
-            byte[] num2 = Coding.EncodeFixed64(g);
+            Coding.EncodeFixed64(data, k);
+            byte[] leftPart = new byte[8];
+            Coding.EncodeFixed64(leftPart, g);
             for(Integer i = 0; i < 8; i++) {
-                data[i] = num1[i];
-                data[i + 8] = num2[i];
+                data[i + 8] = leftPart[i];
             }
             return (long)Hash.hash(data, 16, 0);
         }

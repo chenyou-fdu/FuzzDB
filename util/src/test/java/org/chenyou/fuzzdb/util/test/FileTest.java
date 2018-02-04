@@ -3,8 +3,8 @@ package org.chenyou.fuzzdb.util.test;
 import org.chenyou.fuzzdb.util.Slice;
 
 import org.chenyou.fuzzdb.util.Random;
-import org.chenyou.fuzzdb.util.file.SequentialFile;
-import org.chenyou.fuzzdb.util.file.WritableFile;
+import org.chenyou.fuzzdb.util.file.FuzzSequentialFile;
+import org.chenyou.fuzzdb.util.file.FuzzWritableFile;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -15,7 +15,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -42,7 +41,7 @@ public class FileTest {
 
     @Test
     public void WritableFileTest1() {
-        WritableFile writableFile = null;
+        FuzzWritableFile writableFile = null;
         Integer lineNum = 50000;
         StringBuilder sb = new StringBuilder();
         for(Integer i = 0; i < lineNum; i++) {
@@ -53,7 +52,7 @@ public class FileTest {
         try {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            writableFile = new WritableFile(testTmpFilePath, fd);
+            writableFile = new FuzzWritableFile(testTmpFilePath, fd);
             Assert.assertTrue(writableFile.append(new Slice(text)).ok());
             Assert.assertTrue(writableFile.flush().ok());
             logger.debug("write {} string lager than buffer ", lineNum);
@@ -75,13 +74,13 @@ public class FileTest {
 
     @Test
     public void WritableFileTest2() {
-        WritableFile writableFile = null;
+        FuzzWritableFile writableFile = null;
         Integer lineNum = 1000;
         StringBuilder sb = new StringBuilder();
         try {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-            writableFile = new WritableFile(testTmpFilePath, fd);
+            writableFile = new FuzzWritableFile(testTmpFilePath, fd);
             for(Integer i = 0; i < lineNum; i++) {
                 String eachText = rnd.next().toString();
                 sb.append(eachText);
@@ -125,11 +124,11 @@ public class FileTest {
         Integer lineNum = 100;
         for(Integer i = 0; i < lineNum; i++) {
             String eachText = rnd.next().toString();
-            WritableFile writableFile = null;
+            FuzzWritableFile writableFile = null;
             try {
                 FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.TRUNCATE_EXISTING,
                         StandardOpenOption.WRITE, StandardOpenOption.CREATE);
-                writableFile = new WritableFile(testTmpFilePath, fd);
+                writableFile = new FuzzWritableFile(testTmpFilePath, fd);
                 Assert.assertTrue(writableFile.append(new Slice(eachText)).ok());
                 Assert.assertTrue(writableFile.flush().ok());
             } catch (IOException ex) {
@@ -164,10 +163,10 @@ public class FileTest {
         } catch (IOException ex) {
             throw new RuntimeException(ex.getMessage());
         }
-        SequentialFile sequentialFile = null;
+        FuzzSequentialFile sequentialFile = null;
         try {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.READ);
-            sequentialFile = new SequentialFile(testTmpFilePath, fd);
+            sequentialFile = new FuzzSequentialFile(testTmpFilePath, fd);
             Slice res = new Slice();
             Assert.assertTrue(sequentialFile.read(text.length(), res).ok());
             Assert.assertEquals(text, new String(res.getData()));
@@ -198,10 +197,10 @@ public class FileTest {
         } catch (IOException ex) {
             throw new RuntimeException(ex.getMessage());
         }
-        SequentialFile sequentialFile = null;
+        FuzzSequentialFile sequentialFile = null;
         try {
             FileChannel fd = FileChannel.open(Paths.get(testTmpFilePath), StandardOpenOption.READ);
-            sequentialFile = new SequentialFile(testTmpFilePath, fd);
+            sequentialFile = new FuzzSequentialFile(testTmpFilePath, fd);
             Slice res = new Slice();
             Assert.assertTrue(sequentialFile.skip((long)(text2.length()-text1.length())).ok());
             Assert.assertTrue(sequentialFile.read(text1.length(), res).ok());

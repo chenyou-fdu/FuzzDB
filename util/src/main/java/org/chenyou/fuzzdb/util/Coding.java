@@ -1,21 +1,19 @@
 package org.chenyou.fuzzdb.util;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
+import com.google.common.base.Preconditions;
+
 import java.util.List;
-import java.util.Arrays;
 
 /**
  * Created by ChenYou on 2017/11/12.
  */
 public class Coding {
-    static public byte[] EncodeFixed32(Integer value) {
-        return new byte[]{
-                (byte)(value & 0xff),
-                (byte)((value >> 8) & 0xff),
-                (byte)((value >> 16) & 0xff),
-                (byte)((value >> 24) & 0xff)
-        };
+    static public void EncodeFixed32(byte[] data, Integer value) {
+        Preconditions.checkArgument(data.length >= 4);
+        data[0] = (byte)(value & 0xff);
+        data[1] = (byte)((value >> 8) & 0xff);
+        data[2] = (byte)((value >> 16) & 0xff);
+        data[3] = (byte)((value >> 24) & 0xff);
     }
     static public Integer DecodeFixed32(byte data[], Integer sPos) {
         int byte0 = (((int)data[sPos]) & 0xFF );
@@ -26,23 +24,23 @@ public class Coding {
     }
 
     static public void PutFixed32(List<Byte> dst, Integer value) {
-        byte buf[] = EncodeFixed32(value);
+        byte buf[] = new byte[4];
+        EncodeFixed32(buf, value);
         for(byte b : buf) {
             dst.add(b);
         }
     }
 
-    static public byte[] EncodeFixed64(Long value) {
-        return new byte[] {
-                (byte)(value & 0xff),
-                (byte)((value >> 8) & 0xff),
-                (byte)((value >> 16) & 0xff),
-                (byte)((value >> 24) & 0xff),
-                (byte)((value >> 32) & 0xff),
-                (byte)((value >> 40) & 0xff),
-                (byte)((value >> 48) & 0xff),
-                (byte)((value >> 56) & 0xff)
-        };
+    static public void EncodeFixed64(byte[] data, Long value) {
+        Preconditions.checkArgument(data.length >= 8);
+        data[0] = (byte)(value & 0xff);
+        data[1] = (byte)((value >> 8) & 0xff);
+        data[2] = (byte)((value >> 16) & 0xff);
+        data[3] = (byte)((value >> 24) & 0xff);
+        data[4] = (byte)((value >> 32) & 0xff);
+        data[5] = (byte)((value >> 40) & 0xff);
+        data[6] = (byte)((value >> 48) & 0xff);
+        data[7] = (byte)((value >> 56) & 0xff);
     }
 
     static public Long DecodeFixed64(byte data[], Integer sPos) {
@@ -58,7 +56,9 @@ public class Coding {
     }
 
     static public void PutFixed64(List<Byte> dst, Long value) {
-        byte buf[] = EncodeFixed64(value);
+        //byte buf[] = EncodeFixed64(value);
+        byte[] buf = new byte[8];
+        EncodeFixed64(buf, value);
         for(byte b : buf) {
             dst.add(b);
         }

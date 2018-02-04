@@ -6,7 +6,10 @@ public class LogFormat {
         kZeroType(0),
         kFullType(1),
         // for fragments
-        kFirstType(2), kMiddleType(3), kLastType(4);
+        kFirstType(2), kMiddleType(3), kLastType(4),
+        kEof(5),
+        kBadRecord(6);
+
         private int recordTypeValue;
         RecordType(int i) {
             this.recordTypeValue = i;
