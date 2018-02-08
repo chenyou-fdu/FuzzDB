@@ -77,4 +77,51 @@ public class LogReader {
             this.reporter.corruption(bytes.intValue(), reason);
         }
     }
+
+    public void reportCorruption(Long bytes, String reason) {
+        reportDrop(bytes, Status.Corruption(new Slice(reason), null));
+    }
+
+    public LogFormat.RecordType readPhysicalRecord(Slice result) {
+        while(true) {
+            if(buffer.getSize() < LogFormat.kHeaderSize) {
+                // if not read to end of file, re-read
+                if(!eof) {
+                    buffer.clear();
+                    Status status = sequentialFile.read(LogFormat.kBlockSize, buffer);
+                    endOfBufferOffset += buffer.getSize();
+                    if(!status.ok()) {
+                        buffer.clear();
+                        reportDrop((long)LogFormat.kBlockSize, status);
+                        eof = true;
+                        return LogFormat.RecordType.kEof;
+                    } else if(buffer.getSize() < LogFormat.kBlockSize) {
+                        eof = true;
+                    }
+                } else {
+                    // Note that if buffer is non-empty, we have a truncated header at the
+                    //   end of the file, which can be caused by the writer crashing in the
+                    //   middle of writing the header. Instead of considering this an error,
+                    //   just report EOF.
+                    buffer.clear();
+                    return LogFormat.RecordType.kEof;
+                }
+            }
+            byte[] header = buffer.getData();
+            final Integer a = ((int)header[4]) & 0xff;
+            final Integer b = ((int)header[5]) & 0xff;
+            final Integer type = (int)header[6];
+            final Integer length = a | (b << 8);
+            if(LogFormat.kHeaderSize + length > buffer.getSize()) {
+                Integer dropSize = buffer.getSize();
+                buffer.clear();
+                if(!eof) {
+                    reportCorruption((long)dropSize, "bad record length");
+                    return LogFormat.RecordType.kBadRecord;
+                }
+            }
+
+        }
+
+    }
 }
