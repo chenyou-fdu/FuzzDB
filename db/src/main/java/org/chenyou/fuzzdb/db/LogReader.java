@@ -1,9 +1,12 @@
 package org.chenyou.fuzzdb.db;
 
+import org.chenyou.fuzzdb.util.Coding;
+import org.chenyou.fuzzdb.util.FuzzCRC32C;
 import org.chenyou.fuzzdb.util.Slice;
 import org.chenyou.fuzzdb.util.Status;
 import org.chenyou.fuzzdb.util.file.SequentialFile;
-import sun.rmi.runtime.Log;
+
+import java.util.Arrays;
 
 public class LogReader {
     private static abstract class Reporter {
@@ -82,7 +85,7 @@ public class LogReader {
         reportDrop(bytes, Status.Corruption(new Slice(reason), null));
     }
 
-    public LogFormat.RecordType readPhysicalRecord(Slice result) {
+    public Integer readPhysicalRecord(Slice result) {
         while(true) {
             if(buffer.getSize() < LogFormat.kHeaderSize) {
                 // if not read to end of file, re-read
@@ -94,7 +97,7 @@ public class LogReader {
                         buffer.clear();
                         reportDrop((long)LogFormat.kBlockSize, status);
                         eof = true;
-                        return LogFormat.RecordType.kEof;
+                        return LogFormat.RecordType.kEof.getValue();
                     } else if(buffer.getSize() < LogFormat.kBlockSize) {
                         eof = true;
                     }
@@ -104,7 +107,7 @@ public class LogReader {
                     //   middle of writing the header. Instead of considering this an error,
                     //   just report EOF.
                     buffer.clear();
-                    return LogFormat.RecordType.kEof;
+                    return LogFormat.RecordType.kEof.getValue();
                 }
             }
             byte[] header = buffer.getData();
@@ -117,11 +120,50 @@ public class LogReader {
                 buffer.clear();
                 if(!eof) {
                     reportCorruption((long)dropSize, "bad record length");
-                    return LogFormat.RecordType.kBadRecord;
+                    return LogFormat.RecordType.kBadRecord.getValue();
+                }
+                // If the end of the file has been reached without reading |length| bytes
+                //  of payload, assume the writer died in the middle of writing the record.
+                //  don't report a corruption.
+                return LogFormat.RecordType.kEof.getValue();
+            }
+
+            if(type == LogFormat.RecordType.kZeroType.getValue() && length == 0) {
+                // todo is this useful for java version?
+                buffer.clear();
+                return LogFormat.RecordType.kBadRecord.getValue();
+            }
+
+            if(checkSum) {
+                Integer expectedCrc = FuzzCRC32C.unmask(Coding.DecodeFixed32(header, 0));
+                Integer actuallCrc = FuzzCRC32C.value(header, 6, length + 1);
+                if(actuallCrc.equals(expectedCrc)) {
+                    // Drop the rest of the buffer since "length" itself may have
+                    //  been corrupted and if we trust it, we could find some
+                    //  fragment of a real log record that just happens to look
+                    //  like a valid log record.
+                    Integer dropSize = buffer.getSize();
+                    buffer.clear();
+                    reportCorruption((long)dropSize, "checksum mismatch");
+                    return LogFormat.RecordType.kBadRecord.getValue();
                 }
             }
 
-        }
+            buffer.removePrefix(LogFormat.kHeaderSize + length);
+
+            // Skip physical record that started before initOffset
+            if(endOfBufferOffset - buffer.getSize() - LogFormat.kHeaderSize - length  < initOffset) {
+                result.clear();
+                return LogFormat.RecordType.kBadRecord.getValue();
+            }
+
+            byte[] payLoad = new byte[length];
+            for(Integer i = 0; i < length; i++) {
+                payLoad[i] = header[LogFormat.kHeaderSize + i];
+            }
+            result.setData(payLoad);
+            return type;
+         }
 
     }
 }

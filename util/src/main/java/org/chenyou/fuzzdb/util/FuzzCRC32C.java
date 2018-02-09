@@ -71,13 +71,13 @@ public class FuzzCRC32C{
     //  Motivation: it is problematic to compute the CRC of a string that
     //  contains embedded CRCs.  Therefore we recommend that CRCs stored
     //  somewhere (e.g., in files) should be masked before being stored.
-    public static Integer Mask(Integer crc) {
+    public static Integer mask(Integer crc) {
         // Rotate right by 15 bits and add a constant.
         return ((crc >>> 15) | (crc << 17)) + kMaskDelta;
     }
 
     // Return the crc whose masked representation is maskedCrc.
-    public static Integer Unmask(Integer maskedCrc) {
+    public static Integer unmask(Integer maskedCrc) {
         Integer rot = maskedCrc - kMaskDelta;
         return ((rot >>> 17) | (rot << 15));
     }
@@ -85,6 +85,13 @@ public class FuzzCRC32C{
     public static int value(final byte[] data, int n) {
         Preconditions.checkNotNull(data);
         int preRes = extend(0xFFFFFFFF, data, 0, n);
+        return (int)((~preRes) & 0xFFFFFFFFL);
+    }
+
+    public static int value(final byte[] data, int offset, int n) {
+        Preconditions.checkNotNull(data);
+        Preconditions.checkArgument(n <= data.length - offset);
+        int preRes = extend(0xFFFFFFFF, data, offset, offset + n);
         return (int)((~preRes) & 0xFFFFFFFFL);
     }
 
@@ -97,7 +104,7 @@ public class FuzzCRC32C{
     private static int extend(int crc, byte[] b, int off, int end) {
 
         // Do only byte reads for arrays so short they can't be aligned
-        // or if bytes are stored with a larger witdh than one byte.,%
+        // or if bytes are stored with a larger witdh than one byte.
         if (end - off >= 8 && Unsafe.ARRAY_BYTE_INDEX_SCALE == 1) {
 
             // align on 8 bytes

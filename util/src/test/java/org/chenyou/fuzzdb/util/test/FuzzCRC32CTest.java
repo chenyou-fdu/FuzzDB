@@ -92,13 +92,19 @@ public class FuzzCRC32CTest {
     }
 
     @Test
+    public void FuzzCRC32Test11() {
+        Assert.assertEquals(FuzzCRC32C.value("liam".getBytes(), 2,2),
+                FuzzCRC32C.value("am".getBytes(), 2));
+    }
+
+    @Test
     public void FuzzCRC32MaskTest() {
         Integer crc32cValue = FuzzCRC32C.value("liam".getBytes(), 4);
-        Assert.assertNotEquals(crc32cValue, FuzzCRC32C.Mask(crc32cValue));
-        Assert.assertNotEquals(crc32cValue, FuzzCRC32C.Mask(FuzzCRC32C.Mask(crc32cValue)));
-        Assert.assertEquals(crc32cValue, FuzzCRC32C.Unmask(FuzzCRC32C.Mask(crc32cValue)));
-        Assert.assertEquals(crc32cValue, FuzzCRC32C.Unmask(FuzzCRC32C.Mask(crc32cValue)));
+        Assert.assertNotEquals(crc32cValue, FuzzCRC32C.mask(crc32cValue));
+        Assert.assertNotEquals(crc32cValue, FuzzCRC32C.mask(FuzzCRC32C.mask(crc32cValue)));
+        Assert.assertEquals(crc32cValue, FuzzCRC32C.unmask(FuzzCRC32C.mask(crc32cValue)));
+        Assert.assertEquals(crc32cValue, FuzzCRC32C.unmask(FuzzCRC32C.mask(crc32cValue)));
         Assert.assertEquals(crc32cValue,
-                FuzzCRC32C.Unmask(FuzzCRC32C.Unmask(FuzzCRC32C.Mask(FuzzCRC32C.Mask(crc32cValue)))));
+                FuzzCRC32C.unmask(FuzzCRC32C.unmask(FuzzCRC32C.mask(FuzzCRC32C.mask(crc32cValue)))));
     }
 }

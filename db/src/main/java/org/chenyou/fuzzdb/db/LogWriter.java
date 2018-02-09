@@ -108,7 +108,7 @@ public class LogWriter  {
 
         // compute the crc of the record type and the payload
         Integer crc = FuzzCRC32C.extend(this.typeCrc[t.getValue()], data, n);
-        crc = FuzzCRC32C.Mask(crc);
+        crc = FuzzCRC32C.mask(crc);
         // save crc32c value to first 4 bytes of header
         Coding.EncodeFixed32(buf, crc);
 
