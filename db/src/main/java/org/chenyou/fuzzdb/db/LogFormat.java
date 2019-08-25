@@ -19,8 +19,8 @@ public class LogFormat {
         }
     }
 
-    public static final Integer kMaxRecordType = RecordType.kLastType.getValue();
-    public static final Integer kBlockSize = 32768;
+    public static final int K_MAX_RECORD_TYPE = RecordType.kLastType.getValue();
+    public static final int K_BLOCK_SIZE = 32768;
     // header is checksum (4 bytes), length (2 bytes), type (1 byte).
-    public static final Integer kHeaderSize = 4 + 2 + 1;
+    public static final int K_HEADER_SIZE = 4 + 2 + 1;
 }
