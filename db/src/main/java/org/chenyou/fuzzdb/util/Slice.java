@@ -93,7 +93,16 @@ public class Slice {
 
     @Override
     public String toString() {
-        return new String(this.data);
+        if(this.size == this.data.length) {
+            return new String(this.data);
+        } else {
+            byte[] byteArray = new byte[this.size];
+            for(int i = 0; i < this.size; i++) {
+                byteArray[i] = this.data[i];
+            }
+            return new String(byteArray);
+        }
+
     }
 
     @Override

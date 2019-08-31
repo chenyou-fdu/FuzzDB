@@ -1,7 +1,7 @@
-package org.chenyou.fuzzdb.util;
+package org.chenyou.fuzzdb.util.file;
 
-import org.chenyou.fuzzdb.util.file.FuzzSequentialFile;
-import org.chenyou.fuzzdb.util.file.FuzzWritableFile;
+import org.chenyou.fuzzdb.util.Random;
+import org.chenyou.fuzzdb.util.Slice;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
