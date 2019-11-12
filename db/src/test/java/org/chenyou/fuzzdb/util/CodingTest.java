@@ -63,4 +63,41 @@ public class CodingTest {
         }
     }
 
+    @Test
+    public void testVarint64() {
+        // Construct the list of values to check
+        List<Long> values = new ArrayList<>();
+        values.add(0L);
+        values.add(100L);
+        values.add(~(0L));
+        values.add(~(0L) - 1);
+        for(int i = 0; i < 64; i++) {
+            // Test values near powers of two
+            long power = 1L << i;
+            values.add(power);
+            values.add(power - 1);
+            values.add(power + 1);
+        }
+
+        List<Byte> s = new ArrayList<>();
+        for(int i = 0; i < values.size(); i++) {
+            Coding.PutVarint64(s, values.get(i));
+        }
+
+        int pCnt = 0;
+        int limit = pCnt + s.size();
+        int sPos = 0;
+        for(int i = 0; i < values.size(); i++) {
+            Coding.CodingEntry ce = Coding.GetVarint64(s, sPos, limit);
+            sPos = ce.lastPos;
+            long value = ce.realValue;
+            Assert.assertEquals((long)values.get(i), value);
+            //ASSERT_EQ(VarintLength(actual), p - start);
+
+        }
+
+
+
+    }
+
 }
